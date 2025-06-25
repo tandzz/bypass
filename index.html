@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Vượt Link YeuMoney</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f4ff 0%, #d6e4ff 100%);
+            min-height: 100vh;
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 128, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .btn-bypass {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            transition: all 0.3s;
+        }
+        .btn-bypass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+        .btn-bypass:active {
+            transform: translateY(0);
+        }
+        .spinner {
+            animation: spin 1.5s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .tooltip:hover:before {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 font-sans">
+    <div class="w-full max-w-2xl bg-white card">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">CÔNG CỤ VƯỢT LINK YeuMoney</h1>
+                    <p class="opacity-90">Bypass link rút gọn - Lấy link gốc ẩn đằng sau</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                    <i class="fas fa-unlink text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="p-6">
+            <div class="mb-6">
+                <label for="shortUrl" class="block text-sm font-medium text-gray-700 mb-2">Nhập URL rút gọn từ yeumoney.com:</label>
+                <div class="flex rounded-lg overflow-hidden border border-gray-300 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                    <input 
+                        type="url" 
+                        id="shortUrl" 
+                        class="flex-1 min-w-0 block w-full px-4 py-3 text-base focus:outline-none" 
+                        placeholder="https://yeumoney.com/xyz123" 
+                        required
+                    >
+                    <div class="flex items-center bg-gray-100 px-3">
+                        <i class="fas fa-link text-gray-500"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">VD: https://yeumoney.com/c4tSe</p>
+            </div>
+            
+            <div class="flex justify-end mb-6">
+                <button 
+                    id="bypassBtn" 
+                    class="btn-bypass px-6 py-3 text-white font-semibold rounded-lg flex items-center"
+                >
+                    <i class="fas fa-key mr-2"></i> Vượt Link Ngay
+                </button>
+            </div>
+            
+            <!-- Progress Bar (hidden by default) -->
+            <div id="progressContainer" class="hidden mb-6">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-600 mt-1">
+                    <span>Đang xử lý...</span>
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <!-- Result Container (hidden by default) -->
+            <div id="resultContainer" class="hidden">
+                <div class="border-l-4 border-indigo-500 bg-indigo-50 p-4 rounded-r-lg mb-4 fade-in">
+                    <h3 class="font-semibold text-indigo-800 mb-2">LINK GỐC:</h3>
+                    <div class="flex items-center">
+                        <a 
+                            id="originalLink" 
+                            href="#" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="text-indigo-600 break-all hover:underline flex-1"
+                        >
+                            Đang tải kết quả...
+                        </a>
+                        <button 
+                            id="copyBtn" 
+                            class="tooltip ml-2 p-2 text-indigo-600 rounded-full hover:bg-indigo-100"
+                            data-tooltip="Sao chép"
+                        >
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <button 
+                            id="openBtn" 
+                            class="tooltip ml-1 p-2 text-indigo-600 rounded-full hover:bg-indigo-100"
+                            data-tooltip="Mở link"
+                        >
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-blue-50 p-3 rounded-lg flex items-center">
+                        <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                            <i class="fas fa-shield-alt text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Trạng thái</p>
+                            <p class="font-medium text-blue-600">An toàn</p>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-lg flex items-center">
+                        <div class="bg-emerald-100 p-2 rounded-lg mr-3">
+                            <i class="fas fa-bolt text-emerald-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Tốc độ</p>
+                            <p id="speedInfo" class="font-medium text-emerald-600">Nhanh</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Redirect Chain (simulated) -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                        <h4 class="font-medium text-gray-700">Quá trình chuyển hướng</h4>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div class="px-4 py-3">
+                            <div class="flex items-center text-sm">
+                                <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
+                                    <i class="fas fa-location-arrow"></i>
+                                </span>
+                                <div>
+                                    <p class="font-medium">Bước 1</p>
+                                    <p class="text-gray-600 truncate">Nhận link từ yeumoney.com</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-4 py-3">
+                            <div class="flex items-center text-sm">
+                                <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <div>
+                                    <p class="font-medium">Bước 2</p>
+                                    <p class="text-gray-600 truncate">Phân tích cấu trúc link</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-4 py-3">
+                            <div class="flex items-center text-sm">
+                                <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
+                                    <i class="fas fa-unlock"></i>
+                                </span>
+                                <div>
+                                    <p class="font-medium">Bước 3</p>
+                                    <p class="text-gray-600 truncate">Bỏ qua trang trung gian</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Container (hidden by default) -->
+            <div id="errorContainer" class="hidden">
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-6 fade-in">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800" id="errorTitle">Đã xảy ra lỗi</h3>
+                            <div class="mt-1 text-sm text-red-700">
+                                <p id="errorMessage">Vui lòng thử lại sau</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 text-center text-xs text-gray-500 border-t border-gray-200">
+            <p>⚠️ Lưu ý: Công cụ này chỉ dành cho mục đích giáo dục. Không chịu trách nhiệm cho các link được tạo ra.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bypassBtn = document.getElementById('bypassBtn');
+            const shortUrlInput = document.getElementById('shortUrl');
+            const resultContainer = document.getElementById('resultContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const originalLink = document.getElementById('originalLink');
+            const copyBtn = document.getElementById('copyBtn');
+            const openBtn = document.getElementById('openBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const speedInfo = document.getElementById('speedInfo');
+            
+            // Bypass link khi click nút
+            bypassBtn.addEventListener('click', async function() {
+                const shortUrl = shortUrlInput.value.trim();
+                
+                if (!shortUrl) {
+                    showError('Vui lòng nhập URL rút gọn', 'Bạn chưa nhập link yeumoney.com');
+                    shortUrlInput.focus();
+                    return;
+                }
+                
+                if (!isValidUrl(shortUrl)) {
+                    showError('URL không hợp lệ', 'Vui lòng nhập URL đúng định dạng (VD: https://yeumoney.com/abc123)');
+                    return;
+                }
+                
+                if (!shortUrl.includes('yeumoney.com')) {
+                    showError('URL không phải từ yeumoney.com', 'Công cụ này chỉ hỗ trợ link từ yeumoney.com');
+                    return;
+                }
+                
+                try {
+                    // Reset UI
+                    resultContainer.classList.add('hidden');
+                    errorContainer.classList.add('hidden');
+                    
+                    // Hiển thị progress bar
+                    progressContainer.classList.remove('hidden');
+                    bypassBtn.disabled = true;
+                    bypassBtn.innerHTML = '<i class="fas fa-circle-notch spinner mr-2"></i> Đang xử lý...';
+                    
+                    // Giả lập quá trình bypass (trong thực tế sẽ là API call)
+                    simulateBypassProcess(shortUrl).then(finalUrl => {
+                        // Hiển thị kết quả
+                        originalLink.textContent = finalUrl;
+                        originalLink.href = finalUrl;
+                        
+                        // Cập nhật giao diện
+                        progressContainer.classList.add('hidden');
+                        resultContainer.classList.remove('hidden');
+                        bypassBtn.disabled = false;
+                        bypassBtn.innerHTML = '<i class="fas fa-key mr-2"></i> Vượt Link Ngay';
+                        
+                        // Cuộn đến kết quả
+                        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    });
+                    
+                } catch (error) {
+                    console.error('Bypass error:', error);
+                    showError('Lỗi hệ thống', 'Không thể xử lý yêu cầu. Vui lòng thử lại sau.');
+                    resetUI();
+                }
+            });
+            
+            // Sao chép link gốc
+            copyBtn.addEventListener('click', function() {
+                const textToCopy = originalLink.textContent;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // Hiệu ứng khi copy thành công
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    copyBtn.classList.add('text-green-500');
+                    copyBtn.dataset.tooltip = 'Đã sao chép!';
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('text-green-500');
+                        copyBtn.dataset.tooltip = 'Sao chép';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                });
+            });
+            
+            // Mở link trong tab mới
+            openBtn.addEventListener('click', function() {
+                window.open(originalLink.href, '_blank');
+            });
+            
+            // Hàm giả lập quá trình bypass link
+            function simulateBypassProcess(shortUrl) {
+                return new Promise((resolve) => {
+                    // Hiệu ứng loading
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.floor(Math.random() * 15) + 5;
+                        if (progress > 100) progress = 100;
+                        
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = progress + '%';
+                        
+                        // Cập nhật tốc độ ngẫu nhiên
+                        const speeds = ['Rất nhanh', 'Nhanh', 'Bình thường', 'Hơi chậm'];
+                        speedInfo.textContent = speeds[Math.floor(Math.random() * speeds.length)];
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            
+                            // Giả độ trễ trước khi hiển thị kết quả
+                            setTimeout(() => {
+                                // Giả lập link gốc (trong thực tế sẽ gọi API)
+                                const finalUrl = getOriginalUrlFromYeumoney(shortUrl);
+                                resolve(finalUrl);
+                            }, 500);
+                        }
+                    }, 300);
+                });
+            }
+            
+            // Hàm lấy link gốc (giả lập)
+            function getOriginalUrlFromYeumoney(shortUrl) {
+                // TRONG THỰC TẾ: Bạn cần thay bằng API thật hoặc kỹ thuật bypass thực sự
+                // Hiện tại đang giả lập với một số pattern phổ biến
+                
+                // Tạo một số URL đích giả lập ngẫu nhiên
+                const domains = [
+                    'https://www.facebook.com/',
+                    'https://shopee.vn/',
+                    'https://www.youtube.com/',
+                    'https://zingmp3.vn/',
+                    'https://www.tiktok.com/',
+                    'https://www.instagram.com/'
+                ];
+                
+                const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+                const randomPath = Math.random().toString(36).substring(7);
+                
+                return randomDomain + randomPath;
+                
+                // Trong thực tế, bạn có thể sử dụng:
+                // 1. Gọi đến API bypass link chuyên dụng (nếu có)
+                // 2. Sử dụng proxy server để lấy URL đích mà không redirect
+                // 3. Phân tích cấu trúc link của yeumoney nếu có pattern cố định
+            }
+            
+            // Hàm hiển thị lỗi
+            function showError(title, message) {
+                document.getElementById('errorTitle').textContent = title;
+                document.getElementById('errorMessage').textContent = message;
+                errorContainer.classList.remove('hidden');
+                errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                resetUI
